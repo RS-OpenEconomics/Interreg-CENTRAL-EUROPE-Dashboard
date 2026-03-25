@@ -58,7 +58,7 @@ Font: `Atkinson Hyperlegible Next` (sans) + `Atkinson Hyperlegible Mono` (numeri
 ## Se vuoi aggiungere confini NUTS2 reali
 
 ```bash
-# Esegui localmente (richiede internet)
+# Esegui localmente (richiede internet)_A
 pip install requests
 python download_nuts2_for_flourish.py
 # → genera nuts2_interreg_ce.geojson
