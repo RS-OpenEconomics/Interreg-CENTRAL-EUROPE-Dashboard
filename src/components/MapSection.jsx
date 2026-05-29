@@ -42,7 +42,7 @@ const MAP_W = 600, MAP_H = 440
 let _geo = null
 async function loadGeo() {
   if (_geo) return _geo
-  const b = '/Interreg-CENTRAL-EUROPE-Dashboard'
+  const b = import.meta.env.BASE_URL.replace(/\/$/, '')
   const [n, c] = await Promise.all([
     fetch(`${b}/nuts2_ce.geojson`).then(r => r.json()),
     fetch(`${b}/eu_countries.geojson`).then(r => r.json()),
