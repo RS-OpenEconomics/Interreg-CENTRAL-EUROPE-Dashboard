@@ -1,23 +1,21 @@
 import styles from './KpiStrip.module.css'
 
-export default function KpiStrip({ stats, euVal, selectedYear, benchmarkLabel = 'Programme avg' }) {
+export default function KpiStrip({ stats, euVal, eu27Val, selectedYear, benchmarkLabel = 'Programme avg' }) {
   if (!stats) return null
   if (euVal == null) euVal = 0
-  const gap = stats.avg - euVal
 
-  const avgLabel = stats.isSelection
-    ? `Selected avg (${stats.count} region${stats.count > 1 ? 's' : ''})`
-    : 'Regional average'
+  const eu27Gap = eu27Val != null ? eu27Val - euVal : null
 
   const cards = [
     {
-      label: avgLabel,
-      value: stats.avg.toFixed(1),
-      sub: stats.isSelection
-        ? `${stats.count} region${stats.count > 1 ? 's' : ''} selected`
-        : `${stats.count} regions · 9 countries`,
-      delta: (gap > 0 ? '+' : '') + gap.toFixed(1) + ' vs ' + benchmarkLabel,
-      deltaOk: gap <= 0,
+      label: 'EU27 avg',
+      value: eu27Val != null ? eu27Val.toFixed(1) : 'N/A',
+      sub: `All EU27 regions · ${selectedYear}`,
+      delta: eu27Gap != null
+        ? (eu27Gap > 0 ? '+' : '') + eu27Gap.toFixed(1) + ' vs ' + benchmarkLabel
+        : '—',
+      deltaOk: eu27Gap != null ? eu27Gap <= 0 : true,
+      dimmed: eu27Val == null,
     },
     {
       label: stats.isSelection ? 'Highest (selection)' : 'Highest value',
@@ -37,10 +35,10 @@ export default function KpiStrip({ stats, euVal, selectedYear, benchmarkLabel = 
       label: benchmarkLabel,
       value: euVal.toFixed(1),
       sub: `All CE regions · ${selectedYear}`,
-      delta: gap === 0
-        ? '= Selection avg'
-        : (gap < 0 ? '+' : '') + (gap < 0 ? (-gap).toFixed(1) : gap.toFixed(1)) + ' gap vs selection',
-      deltaOk: gap <= 0,
+      delta: eu27Gap != null
+        ? (eu27Gap < 0 ? '+' : '') + (eu27Gap < 0 ? (-eu27Gap).toFixed(1) : eu27Gap.toFixed(1)) + ' gap vs EU27'
+        : '—',
+      deltaOk: eu27Gap != null ? eu27Gap >= 0 : true,
     },
   ]
 
@@ -49,7 +47,7 @@ export default function KpiStrip({ stats, euVal, selectedYear, benchmarkLabel = 
       {cards.map((c, i) => (
         <div key={i} className={styles.card}>
           <div className={styles.label}>{c.label}</div>
-          <div className={styles.value}>{c.value}</div>
+          <div className={`${styles.value} ${c.dimmed ? styles.dimmed : ''}`}>{c.value}</div>
           <div className={styles.sub}>{c.sub}</div>
           <div className={`${styles.delta} ${c.deltaOk ? styles.green : styles.red}`}>
             {c.delta}

@@ -36,6 +36,7 @@
   min-height: 16px;
 }
 
+.dimmed { opacity: 0.45; }
 .delta { font-size: 13px; font-weight: 700; }
 .green { color: var(--green); }
 .red   { color: var(--red); }

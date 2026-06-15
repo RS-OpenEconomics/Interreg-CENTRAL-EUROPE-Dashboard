@@ -189,7 +189,7 @@ export default function MapSection({ state }) {
    ══════════════════════════════════════════════════════════ */
 export function TrendChart({ state }) {
   const {
-    filtered, regions, years, selectedYear, programmeAvg,
+    filtered, regions, years, selectedYear, programmeAvg, eu27Avg,
     focusRegionObjects, focusRegions,
     activeCountries, hasTimeSeries,
   } = state
@@ -206,7 +206,11 @@ export function TrendChart({ state }) {
   const effectiveMode   = viewMode  // no fallback — user chose the mode explicitly
 
   const trendData = useMemo(() => years.map(y => {
-    const row = { year: y, 'Programme avg': programmeAvg[y] ?? null }
+    const row = {
+      year: y,
+      'Programme avg': programmeAvg[y] ?? null,
+      'EU27 avg': eu27Avg?.[y] ?? null,
+    }
     const allVals = filtered.map(r => r.series[y]).filter(v => v != null)
     row['Regional avg'] = allVals.length
       ? +(allVals.reduce((a, b) => a + b, 0) / allVals.length).toFixed(2)
@@ -220,7 +224,7 @@ export function TrendChart({ state }) {
       })
     }
     return row
-  }), [filtered, years, programmeAvg, effectiveMode, activeCountries, selectedRegions])
+  }), [filtered, years, programmeAvg, eu27Avg, effectiveMode, activeCountries, selectedRegions])
 
   // In Regions mode: lines = individual regions, legend = countries of those regions
   const regionLines = selectedRegions.map(r => ({
@@ -260,7 +264,7 @@ export function TrendChart({ state }) {
     if (!active || !payload?.length) return null
 
     const refs = payload.filter(p =>
-      (p.dataKey === 'Programme avg' || p.dataKey === 'Regional avg') &&
+      (p.dataKey === 'Programme avg' || p.dataKey === 'Regional avg' || p.dataKey === 'EU27 avg') &&
       !hiddenLines.has(p.dataKey)
     )
 
@@ -334,6 +338,14 @@ export function TrendChart({ state }) {
             <Tooltip content={<CustomTooltip />} />
             <ReferenceLine x={selectedYear} stroke="var(--petrol-light)" strokeDasharray="4 3" strokeWidth={1.5} />
 
+            {!hiddenLines.has('EU27 avg') && (
+              <Line dataKey="EU27 avg" stroke="#5B4FCF"
+                strokeWidth={2} strokeDasharray="5 3" dot={false}
+                name="EU27 avg" connectNulls
+                onMouseEnter={() => setHoveredLine('EU27 avg')}
+                onMouseLeave={() => setHoveredLine(null)}
+              />
+            )}
             {!hiddenLines.has('Programme avg') && (
               <Line dataKey="Programme avg" stroke="var(--interreg-blue)"
                 strokeWidth={2} strokeDasharray="6 3" dot={false}
@@ -367,6 +379,7 @@ export function TrendChart({ state }) {
         <div className={styles.legend}>
           {/* Reference lines */}
           {[
+            { key: 'EU27 avg',      label: 'EU27 avg',      color: '#5B4FCF',              dashed: true },
             { key: 'Programme avg', label: 'Programme avg', color: 'var(--interreg-blue)', dashed: true },
             { key: 'Regional avg',  label: 'Regional avg',  color: 'var(--petrol)',        dashed: true },
           ].map(item => {

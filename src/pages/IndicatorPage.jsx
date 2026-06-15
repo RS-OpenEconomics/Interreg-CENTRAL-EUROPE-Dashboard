@@ -326,6 +326,7 @@ export default function IndicatorPage() {
         <KpiStrip
           stats={state.stats}
           euVal={state.programmeAvg[state.selectedYear] ?? 0}
+          eu27Val={state.eu27Avg?.[state.selectedYear] ?? null}
           selectedYear={state.selectedYear}
           benchmarkLabel="Programme avg"
         />

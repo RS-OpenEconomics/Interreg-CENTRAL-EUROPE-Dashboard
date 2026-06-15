@@ -1,37 +1,34 @@
 import { useState, useMemo } from 'react'
-import { getIndicatorData } from '../data/indicators-data.js'
+import {
+  INDICATORS_DATA,
+  REGIONS,
+  COUNTRIES,
+} from '../data/indicators_data_POC'
 
-export const CE_COUNTRIES = [
-  { code: 'AT', name: 'Austria' },
-  { code: 'CZ', name: 'Czechia' },
-  { code: 'DE', name: 'Germany' },
-  { code: 'HR', name: 'Croatia' },
-  { code: 'HU', name: 'Hungary' },
-  { code: 'IT', name: 'Italy' },
-  { code: 'PL', name: 'Poland' },
-  { code: 'SI', name: 'Slovenia' },
-  { code: 'SK', name: 'Slovakia' },
-]
-
-const COUNTRY_NAMES = Object.fromEntries(CE_COUNTRIES.map(c => [c.code, c.name]))
+export const CE_COUNTRIES = COUNTRIES
 
 export function useIndicatorState(sheetCode) {
-  const raw  = getIndicatorData(sheetCode)
-  const years = raw?.years || []
+  const currentData = sheetCode ? INDICATORS_DATA[sheetCode] : null
 
-  // Normalize: add id (=code) and countryName so existing components work
-  const regions = (raw?.regions || []).map(r => ({
-    ...r,
-    id: r.code,
-    countryName: COUNTRY_NAMES[r.country] || r.country,
-  }))
+  // Derive available years from eu27Avg/programmeAvg keys (exclude composite keys like "2014_2024")
+  const yearSrc = currentData?.eu27Avg || currentData?.programmeAvg || {}
+  const years = Object.keys(yearSrc).filter(y => !/\d+_\d+/.test(y)).sort()
 
-  const allCountryCodes  = CE_COUNTRIES.map(c => c.code)
-  const allRegionCodes   = regions.map(r => r.code)
+  const allCountryCodes = COUNTRIES.map(c => c.code)
 
   const [selectedYear,    setSelectedYear]    = useState(years[years.length - 1] || '2024')
   const [activeCountries, setActiveCountries] = useState(allCountryCodes)
-  const [focusRegions,    setFocusRegions]    = useState(allRegionCodes)
+  const [focusRegions,    setFocusRegions]    = useState([])
+
+  // Build regions array: REGIONS list + series from current indicator
+  const regions = useMemo(() => {
+    if (!currentData) return []
+    return REGIONS.map(r => ({
+      ...r,
+      code: r.id,
+      series: currentData.regions[r.id] || {},
+    }))
+  }, [sheetCode])
 
   const filtered = useMemo(
     () => activeCountries.length === 0
@@ -40,7 +37,7 @@ export function useIndicatorState(sheetCode) {
     [regions, activeCountries]
   )
 
-  // Stats computed on selected regions (focusRegions), fallback to all filtered
+  // Stats on focusRegions if any, otherwise all filtered regions
   const statsRegions = useMemo(() => {
     if (focusRegions.length > 0) {
       return regions.filter(r => focusRegions.includes(r.code))
@@ -77,15 +74,11 @@ export function useIndicatorState(sheetCode) {
     )
   }
 
-  // Programme area average = FIXED reference over ALL CE regions, ignoring filters
-  const programmeAvg = useMemo(() => {
-    const result = {}
-    years.forEach(y => {
-      const vals = regions.map(r => r.series[y]).filter(v => v != null)
-      result[y] = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null
-    })
-    return result
-  }, [regions, years])
+  // Real EU27 average (all ~245 EU NUTS2 regions)
+  const eu27Avg = currentData?.eu27Avg || {}
+
+  // CE Programme area average (111 CE programme regions)
+  const programmeAvg = currentData?.programmeAvg || {}
 
   return {
     regions, years, filtered,
@@ -95,10 +88,9 @@ export function useIndicatorState(sheetCode) {
     focusRegionId, setFocusRegionId,
     focusRegionObjects,
     stats,
+    eu27Avg,
     programmeAvg,
-    // MapSection compatibility: expose programmeAvg as eu27
-    eu27: programmeAvg,
-    countries: CE_COUNTRIES,
+    countries: COUNTRIES,
     hasTimeSeries: years.length > 2,
   }
 }
