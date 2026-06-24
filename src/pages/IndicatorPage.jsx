@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { getThemeById, getSubThemeById } from '../data/indicators-catalogue.js'
+import { getPolarity } from '../data/indicator-polarity.js'
 import { useIndicatorState } from '../hooks/useIndicatorState.js'
 import KpiStrip    from '../components/KpiStrip.jsx'
 import MapSection, { TrendChart } from '../components/MapSection.jsx'
@@ -255,6 +256,7 @@ export default function IndicatorPage() {
 
   const [activeSheetIndex, setActiveSheetIndex] = useState(0)
   const activeSheet = sub?.dataSheets?.[activeSheetIndex] ?? sub?.dataSheets?.[0]
+  const polarity = getPolarity(activeSheet)
 
   const state = useIndicatorState(activeSheet)
 
@@ -315,7 +317,7 @@ export default function IndicatorPage() {
 
       {/* Section 3 — Map (moved after policy context) */}
       <div style={{ marginTop: '16px' }}>
-        <MapSection state={state} />
+        <MapSection state={state} polarity={polarity} />
       </div>
 
       {/* Section 4 — Filters */}

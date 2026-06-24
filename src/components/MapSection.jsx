@@ -22,19 +22,28 @@ export const COUNTRY_COLORS = {
   SK: '#c3d3d7',  // Petrol Light (with dark text)
 }
 
-/* ── Choropleth colour scale: green (best) → red (worst) ─── */
-const SCALE = ['#4CAF50','#81C784','#FFF176','#FFB74D','#EF5350','#C62828']
+/* ── Choropleth colour scales ────────────────────────────── */
+// lowGood:  low value → green (good), high value → red (bad)
+// highGood: high value → green (good), low value → red (bad)
+const SCALE_LOW_GOOD  = ['#4CAF50','#81C784','#FFF176','#FFB74D','#EF5350','#C62828']
+const SCALE_HIGH_GOOD = ['#C62828','#EF5350','#FFB74D','#FFF176','#81C784','#4CAF50']
+
+function getScale(polarity) {
+  return polarity === 'highGood' ? SCALE_HIGH_GOOD : SCALE_LOW_GOOD
+}
+
 function buildQuantiles(vals) {
   if (!vals.length) return []
   const sorted = [...vals].filter(v => v != null).sort((a, b) => a - b)
-  const n = SCALE.length - 1
+  const n = SCALE_LOW_GOOD.length - 1
   return Array.from({ length: n }, (_, i) => sorted[Math.floor((i + 1) * sorted.length / (n + 1))])
 }
-function scaleColor(value, quantiles) {
+function scaleColor(value, quantiles, polarity) {
   if (value == null || !quantiles.length) return '#dce8ec'
+  const scale = getScale(polarity)
   let idx = 0
   while (idx < quantiles.length && value > quantiles[idx]) idx++
-  return SCALE[Math.min(idx, SCALE.length - 1)]
+  return scale[Math.min(idx, scale.length - 1)]
 }
 
 /* ── Map geometry loader ─────────────────────────────────── */
@@ -60,7 +69,7 @@ async function loadGeo() {
 /* ══════════════════════════════════════════════════════════
    MAP COMPONENT
    ══════════════════════════════════════════════════════════ */
-export default function MapSection({ state }) {
+export default function MapSection({ state, polarity = 'lowGood' }) {
   const {
     filtered, selectedYear,
     focusRegionId, setFocusRegionId,
@@ -146,7 +155,7 @@ export default function MapSection({ state }) {
             const isFocus = id === focusRegionId
             return (
               <path key={`r-${id}`} d={d}
-                fill={r ? scaleColor(val, quantiles) : '#dce8ec'}
+                fill={r ? scaleColor(val, quantiles, polarity) : '#dce8ec'}
                 stroke="white"
                 strokeWidth={isFocus ? 2.5 : 0.4}
                 opacity={hasFocus && !focusRegionObjects.find(f => f.id === id) ? 0.35 : 1}
@@ -173,11 +182,21 @@ export default function MapSection({ state }) {
           </div>
         )}
 
-        {/* Legend bar */}
+        {/* Legend bar — top = high values, bottom = low values */}
         <div className={styles.legendBar}>
-          <span className={styles.legendMin}>{minVal.toFixed(1)}</span>
-          <div className={styles.legendGrad} />
-          <span className={styles.legendMax}>{maxVal.toFixed(1)}</span>
+          <span className={styles.legendPolarity} style={{ color: polarity === 'highGood' ? '#4CAF50' : '#EF5350' }}>
+            {polarity === 'highGood' ? '▲ better' : '▲ worse'}
+          </span>
+          <span className={styles.legendLabel}>{maxVal.toFixed(1)}</span>
+          <div className={styles.legendGrad} style={{
+            background: polarity === 'highGood'
+              ? 'linear-gradient(to bottom, #4CAF50, #81C784, #FFF176, #FFB74D, #EF5350, #C62828)'
+              : 'linear-gradient(to bottom, #C62828, #EF5350, #FFB74D, #FFF176, #81C784, #4CAF50)',
+          }} />
+          <span className={styles.legendLabel}>{minVal.toFixed(1)}</span>
+          <span className={styles.legendPolarity} style={{ color: polarity === 'highGood' ? '#EF5350' : '#4CAF50' }}>
+            {polarity === 'highGood' ? '▼ worse' : '▼ better'}
+          </span>
         </div>
       </div>
     </div>

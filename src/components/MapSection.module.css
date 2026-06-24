@@ -52,13 +52,19 @@
 .legendGrad {
   width: 14px; height: 120px;
   border-radius: 7px;
-  background: linear-gradient(to bottom, #C62828, #EF5350, #FFB74D, #FFF176, #81C784, #4CAF50);
+  /* gradient set via inline style based on polarity */
   border: 1px solid rgba(0,0,0,0.10);
 }
-.legendMin, .legendMax {
+.legendLabel {
   font-size: 10px; font-weight: 700;
   color: var(--text-2);
   font-family: var(--font-mono);
+}
+.legendPolarity {
+  font-size: 9px; font-weight: 700;
+  font-family: var(--font);
+  letter-spacing: 0.3px;
+  white-space: nowrap;
 }
 
 /* ── Trend card ── */
